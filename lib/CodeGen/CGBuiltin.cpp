@@ -3994,10 +3994,13 @@ RValue CodeGenFunction::EmitBuiltinExpr(const GlobalDecl GD, unsigned BuiltinID,
     return RValue::get(Builder.CreateFPExt(HalfVal, Builder.getFloatTy()));
   }
   case Builtin::BIprintf:
-    if (getTarget().getTriple().isNVPTX() ||
-        (getTarget().getTriple().getArch() == Triple::amdgcn &&
-         getLangOpts().CUDA))
+    if (getTarget().getTriple().isNVPTX())
       return EmitNVPTXDevicePrintfCallExpr(E, ReturnValue);
+    LLVM_FALLTHROUGH;
+  case Builtin::BI__builtin_printf:
+    if (getTarget().getTriple().getArch() == Triple::amdgcn &&
+        (getLangOpts().HIP || getLangOpts().CPlusPlusAMP))
+      return EmitAMDGPUDevicePrintfCallExpr(E, ReturnValue);
     break;
   case Builtin::BI__builtin_canonicalize:
   case Builtin::BI__builtin_canonicalizef:
